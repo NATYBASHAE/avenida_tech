@@ -1,0 +1,11 @@
+{
+  "main": ".open-next/worker.js",
+  "name": "avenida-tech-website",
+  "compatibility_date": "2024-09-23",
+  "compatibility_flags": ["nodejs_compat"],
+  "account_id": "YOUR_CLOUDFLARE_ACCOUNT_ID_HERE",
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  }
+}
