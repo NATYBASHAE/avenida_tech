@@ -5,7 +5,7 @@ import Link from "next/link"
 import Image from "next/image"
 import { cn } from "@/lib/utils"
 import { Button } from "./button"
-import { Menu, X } from "lucide-react"
+import { Menu, X, Phone, MessageCircle, Mail } from "lucide-react"
 
 export function Navbar() {
   const [scrolled, setScrolled] = useState(false)
@@ -34,6 +34,7 @@ export function Navbar() {
               src="/assets/logo/add_light_on_the_logo_202606060204.jpeg" 
               alt="Avenida Technologies" 
               fill 
+              sizes="(max-width: 768px) 160px, 192px"
               className="object-contain object-left mix-blend-screen"
               priority
             />
@@ -42,16 +43,20 @@ export function Navbar() {
 
         {/* Desktop Nav */}
         <nav className="hidden md:flex items-center gap-8 font-medium text-sm text-foreground/80">
-          <Link href="/services" className="hover:text-primary transition-colors">Services</Link>
-          <Link href="/projects" className="hover:text-primary transition-colors">Projects</Link>
           <Link href="/about" className="hover:text-primary transition-colors">About</Link>
           <Link href="/contact" className="hover:text-primary transition-colors">Contact</Link>
         </nav>
 
-        <div className="hidden md:flex">
-          <Link href="/contact">
-            <Button>Request Consultation</Button>
-          </Link>
+        <div className="hidden md:flex items-center gap-4 text-foreground/80">
+          <a href="tel:+251900000000" className="hover:text-primary transition-colors" title="Call Us">
+            <Phone size={20} />
+          </a>
+          <a href="https://wa.me/251900000000" target="_blank" rel="noreferrer" className="hover:text-primary transition-colors" title="WhatsApp">
+            <MessageCircle size={20} />
+          </a>
+          <a href="mailto:info@avenidatech.com" className="hover:text-primary transition-colors" title="Email Us">
+            <Mail size={20} />
+          </a>
         </div>
 
         {/* Mobile Toggle */}
@@ -65,13 +70,19 @@ export function Navbar() {
         {/* Mobile Nav */}
         {mobileMenuOpen && (
           <div className="absolute top-0 left-0 w-full h-screen bg-background/95 backdrop-blur-xl flex flex-col items-center justify-center gap-8 text-xl font-heading z-0">
-            <Link href="/services" onClick={() => setMobileMenuOpen(false)}>Services</Link>
-            <Link href="/projects" onClick={() => setMobileMenuOpen(false)}>Projects</Link>
             <Link href="/about" onClick={() => setMobileMenuOpen(false)}>About</Link>
             <Link href="/contact" onClick={() => setMobileMenuOpen(false)}>Contact</Link>
-            <Link href="/contact" onClick={() => setMobileMenuOpen(false)}>
-              <Button size="lg" className="mt-4">Request Consultation</Button>
-            </Link>
+            <div className="flex gap-6 mt-4">
+              <a href="tel:+251900000000" onClick={() => setMobileMenuOpen(false)} className="text-foreground/80 hover:text-primary transition-colors">
+                <Phone size={24} />
+              </a>
+              <a href="https://wa.me/251900000000" target="_blank" rel="noreferrer" onClick={() => setMobileMenuOpen(false)} className="text-foreground/80 hover:text-primary transition-colors">
+                <MessageCircle size={24} />
+              </a>
+              <a href="mailto:info@avenidatech.com" onClick={() => setMobileMenuOpen(false)} className="text-foreground/80 hover:text-primary transition-colors">
+                <Mail size={24} />
+              </a>
+            </div>
           </div>
         )}
       </div>

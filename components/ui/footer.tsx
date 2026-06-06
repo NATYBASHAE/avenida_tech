@@ -16,6 +16,7 @@ export function Footer() {
                 src="/assets/logo/add_light_on_the_logo_202606060204.jpeg" 
                 alt="Avenida Technologies" 
                 fill 
+                sizes="(max-width: 768px) 160px, 192px"
                 className="object-contain object-left mix-blend-screen opacity-90 hover:opacity-100 transition-opacity"
               />
             </Link>
@@ -29,8 +30,6 @@ export function Footer() {
             <h4 className="font-heading font-semibold text-foreground tracking-wide">Company</h4>
             <div className="flex flex-col gap-3 text-sm text-muted">
               <Link href="/about" className="hover:text-primary transition-colors">About Us</Link>
-              <Link href="/projects" className="hover:text-primary transition-colors">Featured Projects</Link>
-              <Link href="/projects" className="hover:text-primary transition-colors">Industries</Link>
             </div>
           </div>
 
@@ -38,10 +37,10 @@ export function Footer() {
           <div className="flex flex-col gap-4">
             <h4 className="font-heading font-semibold text-foreground tracking-wide">Services</h4>
             <div className="flex flex-col gap-3 text-sm text-muted">
-              <Link href="/services" className="hover:text-primary transition-colors">LED Display Supply</Link>
-              <Link href="/services" className="hover:text-primary transition-colors">Professional Installation</Link>
-              <Link href="/services" className="hover:text-primary transition-colors">Maintenance & Support</Link>
-              <Link href="/services" className="hover:text-primary transition-colors">Technical Consultation</Link>
+              <span>LED Display Supply</span>
+              <span>Professional Installation</span>
+              <span>Maintenance & Support</span>
+              <span>Technical Consultation</span>
             </div>
           </div>
 
@@ -61,8 +60,8 @@ export function Footer() {
         <div className="mt-20 pt-8 border-t border-border flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-muted/60">
           <p>© {new Date().getFullYear()} Avenida Technologies. All rights reserved.</p>
           <div className="flex gap-6">
-            <Link href="#" className="hover:text-foreground transition-colors">Privacy Policy</Link>
-            <Link href="#" className="hover:text-foreground transition-colors">Terms of Service</Link>
+            <Link href="/privacy-policy" className="hover:text-foreground transition-colors">Privacy Policy</Link>
+            <Link href="/terms-of-service" className="hover:text-foreground transition-colors">Terms of Service</Link>
           </div>
         </div>
       </div>

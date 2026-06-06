@@ -16,7 +16,6 @@ export default function Home() {
       <IndustriesSection />
       <WhyChooseUs />
       <ProjectProcess />
-      <FeaturedProjects />
       <CTASection />
     </>
   )

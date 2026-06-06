@@ -15,21 +15,21 @@ const SERVICES = [
     title: "Professional Installation",
     desc: "End-to-end technical installation ensuring structural integrity, perfect alignment, and reliable operation.",
     bullets: ["Mounting Systems", "Cable Management", "Power Distribution"],
-    image: "/assets/church.jpeg",
+    image: "/assets/professional_installation.jpeg",
     reverse: true,
   },
   {
     title: "Maintenance & Support",
     desc: "Long-term operational support to keep your displays running flawlessly year after year.",
     bullets: ["Troubleshooting", "Replacement Modules", "Preventive Maintenance"],
-    image: "/assets/conference.jpeg",
+    image: "/assets/maintenance.jpeg",
     reverse: false,
   },
   {
     title: "Technical Consultation",
     desc: "Expert guidance on pixel pitch, viewing distance, and environmental factors before you invest.",
     bullets: ["Viewing Distance Analysis", "Screen Sizing", "Budget Planning"],
-    image: "/assets/building.jpeg",
+    image: "/assets/Technical_Consultation.jpeg",
     reverse: true,
   }
 ]
@@ -75,6 +75,7 @@ export function ServicesIntro() {
                     src={service.image} 
                     alt={service.title} 
                     fill 
+                    sizes="(max-width: 1024px) 100vw, 50vw"
                     className="object-cover transition-transform duration-700 group-hover:scale-105 opacity-80 group-hover:opacity-100"
                   />
                   <div className="absolute inset-0 border border-white/10 rounded-2xl pointer-events-none" />

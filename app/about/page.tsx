@@ -42,7 +42,7 @@ export default function AboutPage() {
         <div className="max-w-[1280px] mx-auto px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
             <div className="relative aspect-square md:aspect-[4/3] rounded-2xl overflow-hidden glass">
-              <Image src="/assets/conference.jpeg" alt="Our Team" fill className="object-cover" />
+              <Image src="/assets/conference.jpeg" alt="Our Team" fill sizes="(max-width: 1024px) 100vw, 50vw" priority className="object-cover" />
               <div className="absolute inset-0 bg-primary/10 mix-blend-overlay" />
             </div>
             <div className="flex flex-col gap-6">
