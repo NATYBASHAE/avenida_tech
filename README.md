@@ -1,36 +1,90 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Avenida Technologies — LED Display Solutions (Next.js)
+
+AVENIDA TECHNOLOGIES is a Next.js (App Router) website for premium **LED display solutions** including consulting, installation, maintenance/support, and technical planning for churches, conference halls, hotels, schools, retail spaces, and commercial buildings across Ethiopia.
+
+## Tech Stack
+
+- **Next.js** (App Router)
+- **React + TypeScript**
+- **Tailwind CSS**
+- **Framer Motion** (animations)
+- **Lucide React** (icons)
+- **Cloudflare Turnstile** (bot protection on contact form)
+- **Brevo (Sendinblue) SMTP API** (send contact requests)
+- **@opennextjs/cloudflare** (Cloudflare build support)
+
+## Environment Variables
+
+The contact form submission is implemented as a server action in `app/actions/send-email.ts` and requires:
+
+### Required
+
+- `TURNSTILE_SECRET_KEY`  
+  Cloudflare Turnstile secret key used to verify the token server-side.
+
+- `BREVO_API_KEY`  
+  API key used to authenticate to Brevo’s SMTP endpoint.
+
+### Optional (defaults in code)
+
+- `COMPANY_EMAIL`  
+  Destination email for incoming contact requests.  
+  Default: `info@avenidatech.com`
+
+- `SENDER_EMAIL`  
+  Sender email for the outbound message.  
+  Default: `info@avenidatech.com`
+
+- `SENDER_NAME`  
+  Sender display name.  
+  Default: `Avenida Technologies Website`
+
+> If you don’t set the required variables, the contact form will fail to send.
 
 ## Getting Started
 
-First, run the development server:
+1. Install dependencies:
+
+```bash
+npm install
+```
+
+2. Run the development server:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+3. Open the app:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- http://localhost:3000
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Scripts
 
-## Learn More
+- `npm run dev` — start dev server
+- `npm run build` — production build
+- `npm run start` — run production server
+- `npm run lint` — lint the codebase
+- `npm run build:worker` — Cloudflare Workers build (via `@opennextjs/cloudflare`)
 
-To learn more about Next.js, take a look at the following resources:
+## Main Routes
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- `/` — Home
+- `/about` — About Avenida Technologies
+- `/services` — Services overview
+- `/services/[slug]` — Individual service details
+- `/projects` — Projects
+- `/contact` — Contact + consultation request (Turnstile + Brevo email)
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Deployment
 
-## Deploy on Vercel
+- Standard Next.js hosting works out of the box.
+- For Cloudflare Workers deployment, run:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```bash
+npm run build:worker
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## License
+
+All rights reserved.
