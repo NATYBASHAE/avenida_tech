@@ -16,10 +16,10 @@
 # next.js
 /.next/
 /out/
-/.qodo
-/.vscode
-/AGENTS.md
-/CLAUDE.md
+.qodo
+.vscode
+AGENTS.md
+CLAUDE.md
 /follow.md
 /home.md
 /otherPage.md
