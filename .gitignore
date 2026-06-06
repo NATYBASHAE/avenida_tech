@@ -18,11 +18,11 @@
 /out/
 .qodo
 .vscode
-AGENTS*
-CLAUDE*
-/follow*
-/home*
-/otherPage*
+AGENTS.md
+CLAUDE.md
+follow.md
+home.md
+otherPage.md
 
 
 # production
