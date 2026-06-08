@@ -3,11 +3,12 @@
   "version": "0.1.0",
   "private": true,
  "scripts": {
-  "dev": "next dev",
-  "build": "npx @opennextjs/cloudflare build",
-  "start": "next start",
-  "lint": "eslint"
-},
+    "dev": "next dev",
+    "build": "next build",
+    "cf-build": "npx @opennextjs/cloudflare build",
+    "start": "next start",
+    "lint": "eslint"
+  },
   "dependencies": {
     "@opennextjs/cloudflare": "^1.19.11",
     "clsx": "^2.1.1",
