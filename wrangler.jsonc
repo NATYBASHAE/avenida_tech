@@ -1,11 +1,11 @@
-main = ".open-next/worker.js"
-
-name = "avenida-tech-website"
-compatibility_date = "2024-09-23"
-compatibility_flags = ["nodejs_compat"]
-
-account_id = "5189c7fa6957232f1921761aebc4a146"
-
-[assets]
-directory = ".open-next/assets"
-binding = "ASSETS"
+{
+  "main": ".open-next/worker.js",
+  "name": "avenida-tech-website",
+  "compatibility_date": "2024-09-23",
+  "compatibility_flags": ["nodejs_compat"],
+  "account_id": "5189c7fa6957232f1921761aebc4a146",
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  }
+}
