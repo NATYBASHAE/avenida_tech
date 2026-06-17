@@ -92,7 +92,7 @@ function escapeHtml(text: string): string {
   return text.replace(/[&<>"']/g, (m) => map[m])
 }
 
-// Build HTML email body
+//  HTML email body
 function buildEmailHtml(data: z.infer<typeof ContactSchema>): string {
   const escapedName = escapeHtml(data.name)
   const escapedCompany = data.company ? escapeHtml(data.company) : "—"
