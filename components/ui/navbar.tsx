@@ -48,13 +48,13 @@ export function Navbar() {
         </nav>
 
         <div className="hidden md:flex items-center gap-4 text-foreground/80">
-          <a href="tel:+251900000000" className="hover:text-primary transition-colors" title="Call Us">
+          <a href="tel:+251967009542" className="hover:text-primary transition-colors" title="Call Us">
             <Phone size={20} />
           </a>
-          <a href="https://wa.me/251900000000" target="_blank" rel="noreferrer" className="hover:text-primary transition-colors" title="WhatsApp">
+          <a href="https://wa.me/251967009542" target="_blank" rel="noreferrer" className="hover:text-primary transition-colors" title="WhatsApp">
             <MessageCircle size={20} />
           </a>
-          <a href="mailto:info@avenidatech.com" className="hover:text-primary transition-colors" title="Email Us">
+          <a href="mailto:info@avenidatechs.com" className="hover:text-primary transition-colors" title="Email Us">
             <Mail size={20} />
           </a>
         </div>
@@ -73,13 +73,13 @@ export function Navbar() {
             <Link href="/about" onClick={() => setMobileMenuOpen(false)}>About</Link>
             <Link href="/contact" onClick={() => setMobileMenuOpen(false)}>Contact</Link>
             <div className="flex gap-6 mt-4">
-              <a href="tel:+251900000000" onClick={() => setMobileMenuOpen(false)} className="text-foreground/80 hover:text-primary transition-colors">
+              <a href="tel:+251967009542" onClick={() => setMobileMenuOpen(false)} className="text-foreground/80 hover:text-primary transition-colors">
                 <Phone size={24} />
               </a>
-              <a href="https://wa.me/251900000000" target="_blank" rel="noreferrer" onClick={() => setMobileMenuOpen(false)} className="text-foreground/80 hover:text-primary transition-colors">
+              <a href="https://wa.me/251967009542" target="_blank" rel="noreferrer" onClick={() => setMobileMenuOpen(false)} className="text-foreground/80 hover:text-primary transition-colors">
                 <MessageCircle size={24} />
               </a>
-              <a href="mailto:info@avenidatech.com" onClick={() => setMobileMenuOpen(false)} className="text-foreground/80 hover:text-primary transition-colors">
+              <a href="mailto:info@avenidatechs.com" onClick={() => setMobileMenuOpen(false)} className="text-foreground/80 hover:text-primary transition-colors">
                 <Mail size={24} />
               </a>
             </div>
