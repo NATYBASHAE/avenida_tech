@@ -13,6 +13,8 @@ declare global {
           callback?: (token: string) => void
           "expired-callback"?: () => void
           "error-callback"?: () => void
+          size?: "normal" | "compact"
+          "refresh-expired"?: "auto" | "manual"
         }
       ) => string
       reset: (widgetId?: string) => void
@@ -29,61 +31,75 @@ interface TurnstileWidgetProps {
 export function TurnstileWidget({ onVerify, onExpire }: TurnstileWidgetProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const widgetIdRef = useRef<string | null>(null)
-  const scriptLoadedRef = useRef(false)
+  const isRenderedRef = useRef(false)
 
   useEffect(() => {
     const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY
     if (!siteKey || !containerRef.current) return
 
-    const renderWidget = () => {
-      if (!window.turnstile || !containerRef.current || widgetIdRef.current) return
-      
-      widgetIdRef.current = window.turnstile.render(containerRef.current, {
-        sitekey: siteKey,
-        theme: "dark",
-        callback: (token: string) => {
-          onVerify(token)
-        },
-        "expired-callback": () => {
-          onExpire?.()
-        },
-        "error-callback": () => {
-          // Reset on error to allow retry
-          if (widgetIdRef.current && window.turnstile) {
-            window.turnstile.reset(widgetIdRef.current)
-          }
-        },
-      })
+    // Clear any existing widget
+    if (widgetIdRef.current && window.turnstile) {
+      try {
+        window.turnstile.remove(widgetIdRef.current)
+        widgetIdRef.current = null
+        isRenderedRef.current = false
+      } catch {
+        // Ignore
+      }
     }
 
-    const loadScript = () => {
-      if (scriptLoadedRef.current) return
-      
+    const renderWidget = () => {
+      if (!window.turnstile || !containerRef.current || isRenderedRef.current) return
+
+      try {
+        widgetIdRef.current = window.turnstile.render(containerRef.current, {
+          sitekey: siteKey,
+          theme: "dark",
+          size: "normal",
+          "refresh-expired": "auto",
+          callback: (token: string) => {
+            onVerify(token)
+          },
+          "expired-callback": () => {
+            onExpire?.()
+            isRenderedRef.current = false
+          },
+          "error-callback": () => {
+            // Reset the widget on error
+            if (widgetIdRef.current && window.turnstile) {
+              window.turnstile.reset(widgetIdRef.current)
+            }
+            isRenderedRef.current = false
+          },
+        })
+        isRenderedRef.current = true
+      } catch {
+        // Silently fail - widget will retry on next render
+      }
+    }
+
+    // Check if Turnstile is already loaded
+    if (window.turnstile) {
+      renderWidget()
+    } else {
+      // Load the script
       const script = document.createElement("script")
       script.src = "https://challenges.cloudflare.com/turnstile/v0/api.js"
       script.async = true
       script.defer = true
-      script.onload = () => {
-        scriptLoadedRef.current = true
-        renderWidget()
-      }
+      script.onload = renderWidget
       document.head.appendChild(script)
-    }
-
-    if (window.turnstile) {
-      renderWidget()
-    } else {
-      loadScript()
     }
 
     return () => {
       if (window.turnstile && widgetIdRef.current) {
         try {
           window.turnstile.remove(widgetIdRef.current)
+          widgetIdRef.current = null
+          isRenderedRef.current = false
         } catch {
           // Ignore cleanup errors
         }
-        widgetIdRef.current = null
       }
     }
   }, [onVerify, onExpire])
