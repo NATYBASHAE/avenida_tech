@@ -48,9 +48,9 @@ export function Footer() {
           <div className="flex flex-col gap-4">
             <h4 className="font-heading font-semibold text-foreground tracking-wide">Contact</h4>
             <div className="flex flex-col gap-3 text-sm text-muted">
-              <a href="tel:+251900000000" className="hover:text-primary transition-colors">+251 900 000 000</a>
-              <a href="mailto:info@avenidatech.com" className="hover:text-primary transition-colors">info@avenidatech.com</a>
-              <a href="https://wa.me/251900000000" target="_blank" rel="noreferrer" className="hover:text-primary transition-colors">WhatsApp Support</a>
+              <a href="tel:+251967009542" className="hover:text-primary transition-colors">+251 96 700 9542</a>
+              <a href="mailto:info@avenidatechs.com" className="hover:text-primary transition-colors">info@avenidatechs.com</a>
+              <a href="https://wa.me/251967009542" target="_blank" rel="noreferrer" className="hover:text-primary transition-colors">WhatsApp Support</a>
               <span className="text-muted">Addis Ababa, Ethiopia</span>
             </div>
           </div>
