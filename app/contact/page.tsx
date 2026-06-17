@@ -22,6 +22,20 @@ export default function ContactPage() {
     setTurnstileToken("")
   }, [])
 
+  const handleSubmit = useCallback((e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    
+    if (!turnstileToken) {
+      return
+    }
+
+    const formData = new FormData(e.currentTarget)
+    formData.append("turnstileToken", turnstileToken)
+    
+    // Call the server action with the form data
+    formAction(formData)
+  }, [turnstileToken, formAction])
+
   return (
     <div className="pt-24 min-h-screen bg-background">
       <section className="py-24 relative overflow-hidden">
@@ -50,7 +64,12 @@ export default function ContactPage() {
             
             {/* Contact Info */}
             <div className="flex flex-col gap-6">
-              <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 }} className="glass p-6 rounded-xl flex items-start gap-4 hover:border-primary/50 transition-colors">
+              <motion.div 
+                initial={{ opacity: 0, x: -20 }} 
+                animate={{ opacity: 1, x: 0 }} 
+                transition={{ delay: 0.2 }} 
+                className="glass p-6 rounded-xl flex items-start gap-4 hover:border-primary/50 transition-colors"
+              >
                 <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
                   <Phone className="text-primary" size={20} />
                 </div>
@@ -61,7 +80,12 @@ export default function ContactPage() {
                 </div>
               </motion.div>
 
-              <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.3 }} className="glass p-6 rounded-xl flex items-start gap-4 hover:border-primary/50 transition-colors">
+              <motion.div 
+                initial={{ opacity: 0, x: -20 }} 
+                animate={{ opacity: 1, x: 0 }} 
+                transition={{ delay: 0.3 }} 
+                className="glass p-6 rounded-xl flex items-start gap-4 hover:border-primary/50 transition-colors"
+              >
                 <div className="w-10 h-10 rounded-lg bg-[#25D366]/10 flex items-center justify-center shrink-0">
                   <MessageCircle className="text-[#25D366]" size={20} />
                 </div>
@@ -72,7 +96,12 @@ export default function ContactPage() {
                 </div>
               </motion.div>
 
-              <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.4 }} className="glass p-6 rounded-xl flex items-start gap-4 hover:border-primary/50 transition-colors">
+              <motion.div 
+                initial={{ opacity: 0, x: -20 }} 
+                animate={{ opacity: 1, x: 0 }} 
+                transition={{ delay: 0.4 }} 
+                className="glass p-6 rounded-xl flex items-start gap-4 hover:border-primary/50 transition-colors"
+              >
                 <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
                   <Mail className="text-primary" size={20} />
                 </div>
@@ -83,7 +112,12 @@ export default function ContactPage() {
                 </div>
               </motion.div>
 
-              <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.5 }} className="glass p-6 rounded-xl flex items-start gap-4 hover:border-primary/50 transition-colors">
+              <motion.div 
+                initial={{ opacity: 0, x: -20 }} 
+                animate={{ opacity: 1, x: 0 }} 
+                transition={{ delay: 0.5 }} 
+                className="glass p-6 rounded-xl flex items-start gap-4 hover:border-primary/50 transition-colors"
+              >
                 <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
                   <MapPin className="text-primary" size={20} />
                 </div>
@@ -126,7 +160,7 @@ export default function ContactPage() {
                   </Button>
                 </motion.div>
               ) : (
-                <form ref={formRef} action={formAction} className="flex flex-col gap-5" noValidate>
+                <form ref={formRef} onSubmit={handleSubmit} className="flex flex-col gap-5" noValidate>
                   {/* Honeypot field — hidden from real users, bots fill it */}
                   <input
                     name="website"
@@ -250,19 +284,23 @@ export default function ContactPage() {
                     {state.errors?.turnstileToken && (
                       <span className="text-red-400 text-xs">{state.errors.turnstileToken[0]}</span>
                     )}
-                    {/* Hidden input to pass token to form action */}
-                    <input type="hidden" name="turnstileToken" value={turnstileToken} />
                   </div>
 
                   <Button
                     size="lg"
                     className="mt-4"
+                    type="submit"
                     disabled={isPending || !turnstileToken}
                   >
                     {isPending ? (
                       <span className="flex items-center gap-2">
                         <Loader2 size={18} className="animate-spin" />
                         Sending...
+                      </span>
+                    ) : !turnstileToken ? (
+                      <span className="flex items-center gap-2">
+                        <span className="animate-pulse">⏳</span>
+                        Verifying...
                       </span>
                     ) : (
                       "Submit Request"
