@@ -12,14 +12,17 @@ const initialState: ContactFormState = { success: false, message: "" }
 export default function ContactPage() {
   const [state, formAction, isPending] = useActionState(sendContactEmail, initialState)
   const [turnstileToken, setTurnstileToken] = useState("")
+  const [isVerifying, setIsVerifying] = useState(true)
   const formRef = useRef<HTMLFormElement>(null)
 
   const handleVerify = useCallback((token: string) => {
     setTurnstileToken(token)
+    setIsVerifying(false)
   }, [])
 
   const handleExpire = useCallback(() => {
     setTurnstileToken("")
+    setIsVerifying(true)
   }, [])
 
   const handleSubmit = useCallback((e: React.FormEvent<HTMLFormElement>) => {
@@ -32,7 +35,6 @@ export default function ContactPage() {
     const formData = new FormData(e.currentTarget)
     formData.append("turnstileToken", turnstileToken)
     
-    // Call the server action with the form data
     formAction(formData)
   }, [turnstileToken, formAction])
 
@@ -290,18 +292,20 @@ export default function ContactPage() {
                     size="lg"
                     className="mt-4"
                     type="submit"
-                    disabled={isPending || !turnstileToken}
+                    disabled={isPending || isVerifying || !turnstileToken}
                   >
                     {isPending ? (
                       <span className="flex items-center gap-2">
                         <Loader2 size={18} className="animate-spin" />
                         Sending...
                       </span>
-                    ) : !turnstileToken ? (
+                    ) : isVerifying ? (
                       <span className="flex items-center gap-2">
                         <span className="animate-pulse">⏳</span>
                         Verifying...
                       </span>
+                    ) : !turnstileToken ? (
+                      "Please complete verification"
                     ) : (
                       "Submit Request"
                     )}
