@@ -56,7 +56,7 @@ export default function ContactPage() {
                 <div>
                   <h3 className="font-heading font-bold text-white mb-1">Phone Support</h3>
                   <p className="text-muted text-sm mb-2">Mon–Fri from 8am to 6pm.</p>
-                  <a href="tel:+251900000000" className="text-primary font-mono hover:underline">+251 900 000 000</a>
+                  <a href="tel:+251967009542" className="text-primary font-mono hover:underline">+251 96 700 9542</a>
                 </div>
               </motion.div>
 
@@ -67,7 +67,7 @@ export default function ContactPage() {
                 <div>
                   <h3 className="font-heading font-bold text-white mb-1">WhatsApp</h3>
                   <p className="text-muted text-sm mb-2">Fastest way to reach our technical team.</p>
-                  <a href="https://wa.me/251900000000" target="_blank" rel="noreferrer noopener" className="text-[#25D366] font-mono hover:underline">Message Us Now</a>
+                  <a href="https://wa.me/251967009542" target="_blank" rel="noreferrer noopener" className="text-[#25D366] font-mono hover:underline">+251 96 700 9542</a>
                 </div>
               </motion.div>
 
@@ -78,7 +78,7 @@ export default function ContactPage() {
                 <div>
                   <h3 className="font-heading font-bold text-white mb-1">Email</h3>
                   <p className="text-muted text-sm mb-2">Send us your project RFPs.</p>
-                  <a href="mailto:info@avenidatech.com" className="text-primary font-mono hover:underline">info@avenidatech.com</a>
+                  <a href="mailto:info@avenidatechs.com" className="text-primary font-mono hover:underline">info@avenidatechs.com</a>
                 </div>
               </motion.div>
 
