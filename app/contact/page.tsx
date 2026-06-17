@@ -28,15 +28,10 @@ export default function ContactPage() {
 	const formRef = useRef<HTMLFormElement>(null);
 
 	const handleVerify = useCallback((token: string) => {
-		console.log(
-			"✓ Contact page received token:",
-			token.substring(0, 10) + "...",
-		);
 		setTurnstileToken(token);
 	}, []);
 
 	const handleExpire = useCallback(() => {
-		console.log("✗ Token expired, clearing...");
 		setTurnstileToken("");
 	}, []);
 
@@ -369,7 +364,7 @@ export default function ContactPage() {
 												</span>
 											)}
 										</div>
-										{/* Hidden input to pass token to form action */}
+										{/* Hidden input to pass token to form action - Required for form submission */}
 										<input
 											type="hidden"
 											name="turnstileToken"
@@ -381,11 +376,6 @@ export default function ContactPage() {
 										size="lg"
 										className="mt-4"
 										disabled={isPending || !turnstileToken}
-										title={
-											!turnstileToken
-												? "Complete Turnstile verification first"
-												: ""
-										}
 									>
 										{isPending ? (
 											<span className="flex items-center gap-2">
@@ -395,7 +385,7 @@ export default function ContactPage() {
 										) : turnstileToken ? (
 											"Submit Request"
 										) : (
-											"Complete Turnstile to Submit"
+											"Complete Verification to Submit"
 										)}
 									</Button>
 								</form>
