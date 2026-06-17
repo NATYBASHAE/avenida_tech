@@ -1,10 +1,9 @@
 "use server"
 
 import { z } from "zod"
+import { headers } from "next/headers"
 
-// ───────────────────────────────────────────────────────────────
-// Schema — all fields are validated server-side (never trust client)
-// ───────────────────────────────────────────────────────────────
+// Schema — all fields are validated server-side
 const ContactSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters").max(100).trim(),
   company: z.string().max(100).trim().optional(),
@@ -31,35 +30,94 @@ export type ContactFormState = {
 }
 
 // ───────────────────────────────────────────────────────────────
-// Verify Cloudflare Turnstile token server-side
+// Rate Limiting — simple in-memory cache (per IP, max 5 requests/hour)
+// Note: This won't persist across Worker instances in production
+// Consider using Cloudflare KV for production
 // ───────────────────────────────────────────────────────────────
+const rateLimitCache = new Map<string, number[]>()
+const RATE_LIMIT_MAX_REQUESTS = 5
+const RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000 // 1 hour
+
+function getClientIp(headersList: Awaited<ReturnType<typeof headers>>): string {
+  return (
+    headersList.get("x-forwarded-for")?.split(",")[0].trim() ||
+    headersList.get("x-real-ip") ||
+    "unknown"
+  )
+}
+
+function checkRateLimit(ip: string): boolean {
+  const now = Date.now()
+  const requests = rateLimitCache.get(ip) || []
+
+  // Remove old requests outside the time window
+  const recentRequests = requests.filter((timestamp) => now - timestamp < RATE_LIMIT_WINDOW_MS)
+
+  if (recentRequests.length >= RATE_LIMIT_MAX_REQUESTS) {
+    return false // Rate limited
+  }
+
+  recentRequests.push(now)
+  rateLimitCache.set(ip, recentRequests)
+  return true
+}
+
+// Verify Cloudflare Turnstile token server-side
 async function verifyTurnstile(token: string): Promise<boolean> {
   const secret = process.env.TURNSTILE_SECRET_KEY
   if (!secret) {
-    console.error("TURNSTILE_SECRET_KEY is not set")
+    console.error("Security: TURNSTILE_SECRET_KEY is not set")
     return false
   }
 
-  const formData = new FormData()
-  formData.append("secret", secret)
-  formData.append("response", token)
+  try {
+    const formData = new FormData()
+    formData.append("secret", secret)
+    formData.append("response", token)
 
-  const res = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
-    method: "POST",
-    body: formData,
-  })
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 5000) 
 
-  const data = (await res.json()) as { success: boolean; "error-codes"?: string[] }
-  if (!data.success) {
-    console.warn("Turnstile verification failed:", data["error-codes"])
+    const res = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
+      method: "POST",
+      body: formData,
+      signal: controller.signal,
+    })
+
+    clearTimeout(timeoutId)
+
+    const data = (await res.json()) as { success: boolean; "error-codes"?: string[] }
+    if (!data.success) {
+      console.warn("Security: Turnstile verification failed:", data["error-codes"])
+    }
+    return data.success
+  } catch (error) {
+    console.error("Security: Turnstile verification error:", error)
+    return false
   }
-  return data.success
 }
 
-// ───────────────────────────────────────────────────────────────
-// Build a rich HTML email body
-// ───────────────────────────────────────────────────────────────
+// Escape HTML to prevent injection (simple but effective)
+function escapeHtml(text: string): string {
+  const map: Record<string, string> = {
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#039;",
+  }
+  return text.replace(/[&<>"']/g, (m) => map[m])
+}
+
+// HTML email body with proper escaping
 function buildEmailHtml(data: z.infer<typeof ContactSchema>): string {
+  const escapedName = escapeHtml(data.name)
+  const escapedCompany = data.company ? escapeHtml(data.company) : "—"
+  const escapedPhone = escapeHtml(data.phone)
+  const escapedEmail = escapeHtml(data.email)
+  const escapedProjectType = escapeHtml(data.projectType)
+  const escapedMessage = escapeHtml(data.message).replace(/\n/g, "<br/>")
+
   return `
 <!DOCTYPE html>
 <html lang="en">
@@ -87,24 +145,49 @@ function buildEmailHtml(data: z.infer<typeof ContactSchema>): string {
           <tr>
             <td style="padding:0 40px 32px;">
               <table width="100%" cellpadding="0" cellspacing="0">
-                ${buildRow("Name", data.name)}
-                ${buildRow("Company", data.company || "—")}
-                ${buildRow("Phone", data.phone)}
-                ${buildRow("Email", `<a href="mailto:${data.email}" style="color:#00B7FF;text-decoration:none;">${data.email}</a>`)}
-                ${buildRow("Project Type", data.projectType)}
+                <tr>
+                  <td style="padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.06);">
+                    <span style="display:block;font-size:11px;color:#9CA9B7;text-transform:uppercase;letter-spacing:0.08em;font-weight:600;margin-bottom:4px;">Name</span>
+                    <span style="font-size:15px;color:#ffffff;">${escapedName}</span>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.06);">
+                    <span style="display:block;font-size:11px;color:#9CA9B7;text-transform:uppercase;letter-spacing:0.08em;font-weight:600;margin-bottom:4px;">Company</span>
+                    <span style="font-size:15px;color:#ffffff;">${escapedCompany}</span>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.06);">
+                    <span style="display:block;font-size:11px;color:#9CA9B7;text-transform:uppercase;letter-spacing:0.08em;font-weight:600;margin-bottom:4px;">Phone</span>
+                    <span style="font-size:15px;color:#ffffff;">${escapedPhone}</span>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.06);">
+                    <span style="display:block;font-size:11px;color:#9CA9B7;text-transform:uppercase;letter-spacing:0.08em;font-weight:600;margin-bottom:4px;">Email</span>
+                    <span style="font-size:15px;color:#ffffff;"><a href="mailto:${escapedEmail}" style="color:#00B7FF;text-decoration:none;">${escapedEmail}</a></span>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.06);">
+                    <span style="display:block;font-size:11px;color:#9CA9B7;text-transform:uppercase;letter-spacing:0.08em;font-weight:600;margin-bottom:4px;">Project Type</span>
+                    <span style="font-size:15px;color:#ffffff;">${escapedProjectType}</span>
+                  </td>
+                </tr>
               </table>
 
               <!-- Message -->
               <div style="margin-top:24px;background:rgba(0,183,255,0.05);border:1px solid rgba(0,183,255,0.15);border-radius:12px;padding:20px;">
                 <p style="margin:0 0 8px;font-size:12px;color:#9CA9B7;text-transform:uppercase;letter-spacing:0.08em;font-weight:600;">Message</p>
-                <p style="margin:0;color:#ffffff;font-size:15px;line-height:1.6;">${data.message.replace(/\n/g, "<br/>")}</p>
+                <p style="margin:0;color:#ffffff;font-size:15px;line-height:1.6;">${escapedMessage}</p>
               </div>
 
               <!-- Reply CTA -->
               <div style="margin-top:32px;text-align:center;">
-                <a href="mailto:${data.email}?subject=Re: ${encodeURIComponent(data.projectType)} Inquiry"
+                <a href="mailto:${escapedEmail}?subject=Re: ${encodeURIComponent(escapedProjectType)} Inquiry"
                    style="display:inline-block;background:#00B7FF;color:#0A0F14;font-weight:700;font-size:14px;padding:12px 28px;border-radius:8px;text-decoration:none;">
-                  Reply to ${data.name}
+                  Reply to ${escapedName}
                 </a>
               </div>
             </td>
@@ -126,23 +209,65 @@ function buildEmailHtml(data: z.infer<typeof ContactSchema>): string {
 </html>`
 }
 
-function buildRow(label: string, value: string): string {
-  return `
-    <tr>
-      <td style="padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.06);">
-        <span style="display:block;font-size:11px;color:#9CA9B7;text-transform:uppercase;letter-spacing:0.08em;font-weight:600;margin-bottom:4px;">${label}</span>
-        <span style="font-size:15px;color:#ffffff;">${value}</span>
-      </td>
-    </tr>`
+// Send email using Cloudflare Email Sending Service
+async function sendEmailWithCloudflare(
+  to: string,
+  replyTo: string,
+  replyToName: string,
+  subject: string,
+  htmlContent: string,
+  senderEmail: string,
+  senderName: string
+): Promise<boolean> {
+  try {
+    // The binding is injected by Cloudflare at runtime
+    const emailBinding = (globalThis as any).EMAIL
+    
+    if (!emailBinding) {
+      console.error("Cloudflare Email binding not found. Make sure it's configured in wrangler.jsonc")
+      return false
+    }
+
+    await emailBinding.send({
+      to: [{ email: to }],
+      from: { 
+        email: senderEmail, 
+        name: senderName 
+      },
+      reply_to: { 
+        email: replyTo, 
+        name: replyToName 
+      },
+      subject: subject,
+      html: htmlContent,
+      text: `New Contact Form Submission\n\nName: ${replyToName}\nEmail: ${replyTo}\nPhone: ${escapeHtml(replyTo)} // Note: Phone is not in reply_to\n\nPlease view the HTML version for full details.`,
+    })
+
+    console.info(`Email sent successfully to ${to} via Cloudflare Email Service`)
+    return true
+  } catch (error) {
+    console.error("Cloudflare Email send error:", error)
+    return false
+  }
 }
 
-// ───────────────────────────────────────────────────────────────
 // Main Server Action
-// ───────────────────────────────────────────────────────────────
 export async function sendContactEmail(
   _prevState: ContactFormState,
   formData: FormData
 ): Promise<ContactFormState> {
+  // 0. Check rate limit
+  const headersList = await headers()
+  const clientIp = getClientIp(headersList)
+
+  if (!checkRateLimit(clientIp)) {
+    console.warn(`Security: Rate limit exceeded for IP: ${clientIp}`)
+    return {
+      success: false,
+      message: "Too many requests. Please try again in 1 hour.",
+    }
+  }
+
   // 1. Parse + validate input
   const raw = {
     name: formData.get("name"),
@@ -170,51 +295,39 @@ export async function sendContactEmail(
   // 2. Verify Turnstile (bot check)
   const isHuman = await verifyTurnstile(data.turnstileToken)
   if (!isHuman) {
+    console.warn(`Security: Turnstile verification failed for email: ${data.email}`)
     return {
       success: false,
       message: "Bot verification failed. Please try again.",
     }
   }
 
-  // 3. Send via Brevo API (HTTP, works on Cloudflare Workers edge)
-  const apiKey = process.env.BREVO_API_KEY
+  // 3. Send email using Cloudflare Email Service
   const companyEmail = process.env.COMPANY_EMAIL || "info@avenidatech.com"
   const senderEmail = process.env.SENDER_EMAIL || "info@avenidatech.com"
   const senderName = process.env.SENDER_NAME || "Avenida Technologies Website"
 
-  if (!apiKey) {
-    console.error("BREVO_API_KEY is not configured")
-    return {
-      success: false,
-      message: "Email service is not configured. Please contact us directly.",
-    }
-  }
-
   try {
-    const response = await fetch("https://api.brevo.com/v3/smtp/email", {
-      method: "POST",
-      headers: {
-        "api-key": apiKey,
-        "Content-Type": "application/json",
-        Accept: "application/json",
-      },
-      body: JSON.stringify({
-        sender: { name: senderName, email: senderEmail },
-        to: [{ email: companyEmail, name: "Avenida Technologies" }],
-        replyTo: { email: data.email, name: data.name },
-        subject: `New ${data.projectType} Inquiry from ${data.name}`,
-        htmlContent: buildEmailHtml(data),
-      }),
-    })
+    const htmlContent = buildEmailHtml(data)
+    const emailSent = await sendEmailWithCloudflare(
+      companyEmail, // To: your company email
+      data.email,   // Reply-To: user's email
+      data.name,    // Reply-To name: user's name
+      `New ${data.projectType} Inquiry from ${data.name}`,
+      htmlContent,
+      senderEmail,
+      senderName
+    )
 
-    if (!response.ok) {
-      const errorText = await response.text()
-      console.error("Brevo API error:", response.status, errorText)
+    if (!emailSent) {
+      console.error("Failed to send email via Cloudflare Email Service")
       return {
         success: false,
         message: "Failed to send message. Please try again or contact us via WhatsApp.",
       }
     }
+
+    console.info(`Success: Email sent from ${data.email} (${data.projectType})`)
 
     return {
       success: true,
