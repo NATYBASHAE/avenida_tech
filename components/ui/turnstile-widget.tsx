@@ -15,10 +15,12 @@ declare global {
           "error-callback"?: () => void
           size?: "normal" | "compact"
           "refresh-expired"?: "auto" | "manual"
+          "execution"?: "render" | "execute"
         }
       ) => string
       reset: (widgetId?: string) => void
       remove: (widgetId?: string) => void
+      execute: (widgetId?: string) => void
     }
   }
 }
@@ -32,6 +34,7 @@ export function TurnstileWidget({ onVerify, onExpire }: TurnstileWidgetProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const widgetIdRef = useRef<string | null>(null)
   const isRenderedRef = useRef(false)
+  const hasCheckedCacheRef = useRef(false)
 
   useEffect(() => {
     const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY
@@ -44,7 +47,7 @@ export function TurnstileWidget({ onVerify, onExpire }: TurnstileWidgetProps) {
         widgetIdRef.current = null
         isRenderedRef.current = false
       } catch {
-        // Ignore
+        // Ignore cleanup errors
       }
     }
 
@@ -57,6 +60,8 @@ export function TurnstileWidget({ onVerify, onExpire }: TurnstileWidgetProps) {
           theme: "dark",
           size: "normal",
           "refresh-expired": "auto",
+          // Only render the widget, don't auto-execute
+          "execution": "render",
           callback: (token: string) => {
             onVerify(token)
           },
@@ -65,7 +70,6 @@ export function TurnstileWidget({ onVerify, onExpire }: TurnstileWidgetProps) {
             isRenderedRef.current = false
           },
           "error-callback": () => {
-            // Reset the widget on error
             if (widgetIdRef.current && window.turnstile) {
               window.turnstile.reset(widgetIdRef.current)
             }
@@ -73,6 +77,17 @@ export function TurnstileWidget({ onVerify, onExpire }: TurnstileWidgetProps) {
           },
         })
         isRenderedRef.current = true
+
+        // Check if there's already a cached token
+        if (!hasCheckedCacheRef.current) {
+          hasCheckedCacheRef.current = true
+          // Execute the challenge silently - if already verified, it will callback immediately
+          setTimeout(() => {
+            if (widgetIdRef.current && window.turnstile) {
+              window.turnstile.execute(widgetIdRef.current)
+            }
+          }, 100)
+        }
       } catch {
         // Silently fail - widget will retry on next render
       }
