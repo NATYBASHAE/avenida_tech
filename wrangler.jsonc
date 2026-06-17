@@ -17,7 +17,8 @@
   "vars": {
     "COMPANY_EMAIL": "info@avenidatechs.com",
     "SENDER_EMAIL": "info@avenidatechs.com",
-    "SENDER_NAME": "Avenida Technologies Website"
+    "SENDER_NAME": "Avenida Technologies Website",
+    "NEXT_PUBLIC_TURNSTILE_SITE_KEY": "0x4AAAAAADltp81fIp1xis3s"
   },
   "observability": {
     "enabled": true,
