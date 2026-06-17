@@ -3,7 +3,6 @@
 import { z } from "zod"
 import { headers } from "next/headers"
 
-// Validation schema for contact form
 const ContactSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters").max(100).trim(),
   company: z.string().max(100).trim().optional(),
@@ -27,12 +26,11 @@ export type ContactFormState = {
   errors?: Record<string, string[]>
 }
 
-// Rate limiting configuration
+// Rate limiting
 const rateLimitCache = new Map<string, number[]>()
 const RATE_LIMIT_MAX_REQUESTS = 5
 const RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000
 
-// Extract client IP from request headers
 function getClientIp(headersList: Awaited<ReturnType<typeof headers>>): string {
   return (
     headersList.get("x-forwarded-for")?.split(",")[0].trim() ||
@@ -41,7 +39,6 @@ function getClientIp(headersList: Awaited<ReturnType<typeof headers>>): string {
   )
 }
 
-// Check if IP has exceeded rate limit
 function checkRateLimit(ip: string): boolean {
   const now = Date.now()
   const requests = rateLimitCache.get(ip) || []
@@ -95,7 +92,7 @@ function escapeHtml(text: string): string {
   return text.replace(/[&<>"']/g, (m) => map[m])
 }
 
-// Generate HTML email body
+// Build HTML email body
 function buildEmailHtml(data: z.infer<typeof ContactSchema>): string {
   const escapedName = escapeHtml(data.name)
   const escapedCompany = data.company ? escapeHtml(data.company) : "—"
@@ -104,8 +101,7 @@ function buildEmailHtml(data: z.infer<typeof ContactSchema>): string {
   const escapedProjectType = escapeHtml(data.projectType)
   const escapedMessage = escapeHtml(data.message).replace(/\n/g, "<br/>")
 
-  return `
-<!DOCTYPE html>
+  return `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -188,8 +184,8 @@ function buildEmailHtml(data: z.infer<typeof ContactSchema>): string {
 </html>`
 }
 
-// Send email using Cloudflare Email Sending Service
-async function sendEmailWithCloudflare(
+// Send email using Gmail API with App Password
+async function sendWithGmail(
   to: string,
   replyTo: string,
   replyToName: string,
@@ -198,35 +194,122 @@ async function sendEmailWithCloudflare(
   senderEmail: string,
   senderName: string
 ): Promise<boolean> {
-  try {
-    const emailBinding = (globalThis as any).EMAIL
-    
-    if (!emailBinding) {
-      return false
-    }
+  const gmailUser = process.env.GMAIL_USER
+  const gmailAppPassword = process.env.GMAIL_APP_PASSWORD
 
-    await emailBinding.send({
-      to: [{ email: to }],
-      from: { 
-        email: senderEmail, 
-        name: senderName 
-      },
-      reply_to: { 
-        email: replyTo, 
-        name: replyToName 
-      },
-      subject: subject,
-      html: htmlContent,
-      text: `New Contact Form Submission\n\nName: ${replyToName}\nEmail: ${replyTo}\n\nPlease view the HTML version for full details.`,
-    })
-
-    return true
-  } catch {
+  if (!gmailUser || !gmailAppPassword) {
     return false
   }
+
+  const emailLines = [
+    `From: ${senderName} <${senderEmail}>`,
+    `To: ${to}`,
+    `Reply-To: ${replyToName} <${replyTo}>`,
+    `Subject: ${subject}`,
+    "MIME-Version: 1.0",
+    'Content-Type: text/html; charset="UTF-8"',
+    "Content-Transfer-Encoding: base64",
+    "",
+    htmlContent,
+  ]
+
+  const mimeEmail = emailLines.join("\r\n")
+  const base64Email = Buffer.from(mimeEmail).toString("base64url")
+  const auth = btoa(`${gmailUser}:${gmailAppPassword}`)
+
+  const response = await fetch("https://gmail.googleapis.com/gmail/v1/users/me/messages/send", {
+    method: "POST",
+    headers: {
+      "Authorization": `Basic ${auth}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ raw: base64Email }),
+  })
+
+  if (!response.ok) {
+    const errorText = await response.text()
+    console.error("Gmail API error:", response.status, errorText)
+    return false
+  }
+
+  return true
 }
 
-// Main server action for contact form submission
+// Send email using Resend (fallback)
+async function sendWithResend(
+  to: string,
+  replyTo: string,
+  replyToName: string,
+  subject: string,
+  htmlContent: string,
+  senderEmail: string,
+  senderName: string
+): Promise<boolean> {
+  const apiKey = process.env.RESEND_API_KEY
+  if (!apiKey) return false
+
+  const response = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      from: `${senderName} <${senderEmail}>`,
+      to: [to],
+      reply_to: `${replyToName} <${replyTo}>`,
+      subject: subject,
+      html: htmlContent,
+    }),
+  })
+
+  if (!response.ok) {
+    const errorText = await response.text()
+    console.error("Resend API error:", response.status, errorText)
+    return false
+  }
+
+  return true
+}
+
+// Send email using Brevo (fallback)
+async function sendWithBrevo(
+  to: string,
+  replyTo: string,
+  replyToName: string,
+  subject: string,
+  htmlContent: string,
+  senderEmail: string,
+  senderName: string
+): Promise<boolean> {
+  const apiKey = process.env.BREVO_API_KEY
+  if (!apiKey) return false
+
+  const response = await fetch("https://api.brevo.com/v3/smtp/email", {
+    method: "POST",
+    headers: {
+      "api-key": apiKey,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      sender: { email: senderEmail, name: senderName },
+      to: [{ email: to }],
+      replyTo: { email: replyTo, name: replyToName },
+      subject: subject,
+      htmlContent: htmlContent,
+    }),
+  })
+
+  if (!response.ok) {
+    const errorText = await response.text()
+    console.error("Brevo API error:", response.status, errorText)
+    return false
+  }
+
+  return true
+}
+
+// Main server action
 export async function sendContactEmail(
   _prevState: ContactFormState,
   formData: FormData
@@ -234,7 +317,6 @@ export async function sendContactEmail(
   const headersList = await headers()
   const clientIp = getClientIp(headersList)
 
-  // Apply rate limiting
   if (!checkRateLimit(clientIp)) {
     return {
       success: false,
@@ -242,7 +324,6 @@ export async function sendContactEmail(
     }
   }
 
-  // Parse and validate form data
   const raw = {
     name: formData.get("name"),
     company: formData.get("company"),
@@ -266,7 +347,6 @@ export async function sendContactEmail(
 
   const data = parsed.data
 
-  // Verify Turnstile token
   const isHuman = await verifyTurnstile(data.turnstileToken)
   if (!isHuman) {
     return {
@@ -275,14 +355,28 @@ export async function sendContactEmail(
     }
   }
 
-  // Send email
   const companyEmail = process.env.COMPANY_EMAIL || "info@avenidatech.com"
   const senderEmail = process.env.SENDER_EMAIL || "info@avenidatech.com"
   const senderName = process.env.SENDER_NAME || "Avenida Technologies Website"
 
-  try {
-    const htmlContent = buildEmailHtml(data)
-    const emailSent = await sendEmailWithCloudflare(
+  const htmlContent = buildEmailHtml(data)
+  let emailSent = false
+
+  // Try Gmail first
+  emailSent = await sendWithGmail(
+    companyEmail,
+    data.email,
+    data.name,
+    `New ${data.projectType} Inquiry from ${data.name}`,
+    htmlContent,
+    senderEmail,
+    senderName
+  )
+
+  // Try Resend if Gmail fails
+  if (!emailSent) {
+    console.warn("Gmail failed, trying Resend...")
+    emailSent = await sendWithResend(
       companyEmail,
       data.email,
       data.name,
@@ -291,22 +385,31 @@ export async function sendContactEmail(
       senderEmail,
       senderName
     )
+  }
 
-    if (!emailSent) {
-      return {
-        success: false,
-        message: "Failed to send message. Please try again or contact us via WhatsApp.",
-      }
-    }
+  // Try Brevo if Resend fails
+  if (!emailSent) {
+    console.warn("Resend failed, trying Brevo...")
+    emailSent = await sendWithBrevo(
+      companyEmail,
+      data.email,
+      data.name,
+      `New ${data.projectType} Inquiry from ${data.name}`,
+      htmlContent,
+      senderEmail,
+      senderName
+    )
+  }
 
-    return {
-      success: true,
-      message: "Your message has been sent successfully. We will get back to you within 24 hours.",
-    }
-  } catch {
+  if (!emailSent) {
     return {
       success: false,
-      message: "Network error. Please try again or contact us via WhatsApp.",
+      message: "Failed to send message. Please try again or contact us via WhatsApp.",
     }
+  }
+
+  return {
+    success: true,
+    message: "Your message has been sent successfully. We will get back to you within 24 hours.",
   }
 }
