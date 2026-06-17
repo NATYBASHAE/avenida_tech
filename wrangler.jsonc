@@ -7,5 +7,16 @@
   "assets": {
     "directory": ".open-next/assets",
     "binding": "ASSETS"
+  },
+  "send_email": [
+    {
+      "type": "send_email",
+      "name": "EMAIL"
+    }
+  ],
+  "vars": {
+    "COMPANY_EMAIL": "info@avenidatechs.com",
+    "SENDER_EMAIL": "info@avenidatechs.com",
+    "SENDER_NAME": "Avenida Technologies Website"
   }
 }
